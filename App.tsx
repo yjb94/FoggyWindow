@@ -7,6 +7,7 @@ import {
   Text,
   View,
 } from "react-native";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { Main } from "./src/Main";
 
 export default function App() {
@@ -33,7 +34,11 @@ export default function App() {
     );
   }
 
-  return <Main />;
+  return (
+    <GestureHandlerRootView>
+      <Main />
+    </GestureHandlerRootView>
+  );
 }
 
 const styles = StyleSheet.create({
