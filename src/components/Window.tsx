@@ -36,7 +36,7 @@ const Window = ({ ref, fogPath, onReady }: WindowProps) => {
   const fogBlurValue = useSharedValue(0);
   const xValue = useSharedValue(0);
 
-  const backgroundImage = useImage(require("./assets/city.jpg"));
+  const backgroundImage = useImage(require("../assets/city.jpg"));
 
   const imageWidth = backgroundImage?.width() || 1;
   const imageHeight = backgroundImage?.height() || 1;

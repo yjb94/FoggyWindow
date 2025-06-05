@@ -3,7 +3,8 @@ import React, { useEffect, useRef, useState } from "react";
 import { StyleSheet } from "react-native";
 import { Gesture, GestureDetector } from "react-native-gesture-handler";
 import { runOnJS } from "react-native-reanimated";
-import Window, { WindowRef } from "./Window";
+import { Rain } from "./components/Rain";
+import Window, { WindowRef } from "./components/Window";
 
 const START_DELAY = 1000;
 
@@ -39,16 +40,15 @@ const Main = () => {
     runOnJS(clearFogAtPoint)(e.x, e.y);
   });
 
+  const ready = () => {
+    setIsReady(true);
+  };
+
   return (
     <GestureDetector gesture={gesture}>
       <Canvas style={styles.container}>
-        <Window
-          ref={windowRef}
-          fogPath={fogPath}
-          onReady={() => {
-            setIsReady(true);
-          }}
-        />
+        <Window ref={windowRef} fogPath={fogPath} onReady={ready} />
+        <Rain />
       </Canvas>
     </GestureDetector>
   );
