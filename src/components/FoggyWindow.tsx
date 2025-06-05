@@ -1,11 +1,5 @@
-import {
-  Blur,
-  Group,
-  Image,
-  ImageShader,
-  SkImage,
-} from "@shopify/react-native-skia";
-import React, { useImperativeHandle } from "react";
+import { Blur, Group, Image, Paint, SkImage } from "@shopify/react-native-skia";
+import React, { useImperativeHandle, useMemo } from "react";
 import { useWindowDimensions } from "react-native";
 import {
   Easing,
@@ -19,14 +13,15 @@ import FingerLine, { Point } from "./FingerLine";
 import {
   MAX_RAIN_LENGTH,
   MAX_RAIN_SPEED,
+  MAX_RAIN_WIDTH,
   MIN_RAIN_LENGTH,
   MIN_RAIN_SPEED,
   MIN_RAIN_WIDTH,
+  Rain,
   RAIN_COUNT,
   RAIN_SLOPE,
   RainDropProps,
 } from "./Rain";
-import { MAX_RAIN_WIDTH } from "./Rain/consts";
 
 // const PADDING_X = 30;
 const PADDING_X = 100;
@@ -112,45 +107,47 @@ const FoggyWindow = ({
     );
   };
 
-  const rainDrops: RainDropProps[] = Array.from({ length: RAIN_COUNT }).map(
-    (_, i) => ({
-      defaultX: Math.random() * (width + Math.abs(RAIN_SLOPE) * height),
-      defaultY: (i / RAIN_COUNT) * height,
-      length:
-        MIN_RAIN_LENGTH + Math.random() * (MAX_RAIN_LENGTH - MIN_RAIN_LENGTH),
-      speed: MAX_RAIN_SPEED + Math.random() * (MAX_RAIN_SPEED - MIN_RAIN_SPEED),
-      width: MIN_RAIN_WIDTH + Math.random() * (MAX_RAIN_WIDTH - MIN_RAIN_WIDTH),
-      slope: RAIN_SLOPE,
-    })
+  const rainDrops: RainDropProps[] = useMemo(
+    () =>
+      Array.from({ length: RAIN_COUNT }).map((_, i) => ({
+        defaultX: Math.random() * (width + Math.abs(RAIN_SLOPE) * height),
+        defaultY: (i / RAIN_COUNT) * height,
+        length:
+          MIN_RAIN_LENGTH + Math.random() * (MAX_RAIN_LENGTH - MIN_RAIN_LENGTH),
+        speed:
+          MAX_RAIN_SPEED + Math.random() * (MAX_RAIN_SPEED - MIN_RAIN_SPEED),
+        width:
+          MIN_RAIN_WIDTH + Math.random() * (MAX_RAIN_WIDTH - MIN_RAIN_WIDTH),
+        slope: RAIN_SLOPE,
+      })),
+    [width, height]
   );
 
   return (
     <Group>
-      <Group>
-        <Image
-          image={backgroundImage}
-          fit="cover"
-          x={xValue}
-          y={-PADDING_Y}
-          width={scaledWidth}
-          height={scaledHeight}
-        />
+      <Image
+        image={backgroundImage}
+        fit="cover"
+        x={xValue}
+        y={-PADDING_Y}
+        width={scaledWidth}
+        height={scaledHeight}
+      />
 
-        <Image
-          image={backgroundImage}
-          fit="cover"
-          x={secondImageX}
-          y={-PADDING_Y}
-          width={scaledWidth}
-          height={scaledHeight}
-        />
+      <Image
+        image={backgroundImage}
+        fit="cover"
+        x={secondImageX}
+        y={-PADDING_Y}
+        width={scaledWidth}
+        height={scaledHeight}
+      />
 
-        <Blur blur={fogBlurValue} />
-      </Group>
+      <Rain rainDrops={rainDrops} />
 
-      <Group>
-        <FingerLine line={currentFingerLine} shouldFade={false}>
-          <ImageShader
+      <Group layer={<Paint />}>
+        <Group>
+          <Image
             image={backgroundImage}
             fit="cover"
             x={xValue}
@@ -158,9 +155,8 @@ const FoggyWindow = ({
             width={scaledWidth}
             height={scaledHeight}
           />
-        </FingerLine>
-        <FingerLine line={currentFingerLine} shouldFade={false}>
-          <ImageShader
+
+          <Image
             image={backgroundImage}
             fit="cover"
             x={secondImageX}
@@ -168,37 +164,17 @@ const FoggyWindow = ({
             width={scaledWidth}
             height={scaledHeight}
           />
-        </FingerLine>
+          <Rain rainDrops={rainDrops} />
+          <Blur blur={fogBlurValue} />
+        </Group>
+
+        <Group blendMode="clear">
+          <FingerLine line={currentFingerLine} shouldFade={false} />
+          {fingerLines.map((fingerLine, index) => {
+            return <FingerLine key={index} line={fingerLine} />;
+          })}
+        </Group>
       </Group>
-
-      {fingerLines.map((fingerLine, index) => {
-        return (
-          <Group key={index}>
-            <FingerLine line={fingerLine}>
-              <ImageShader
-                image={backgroundImage}
-                fit="cover"
-                x={xValue}
-                y={-PADDING_Y}
-                width={scaledWidth}
-                height={scaledHeight}
-              />
-            </FingerLine>
-            <FingerLine line={fingerLine}>
-              <ImageShader
-                image={backgroundImage}
-                fit="cover"
-                x={secondImageX}
-                y={-PADDING_Y}
-                width={scaledWidth}
-                height={scaledHeight}
-              />
-            </FingerLine>
-          </Group>
-        );
-      })}
-
-      {/* <Rain rainDrops={rainDrops} /> */}
     </Group>
   );
 };
