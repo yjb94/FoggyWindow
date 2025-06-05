@@ -1,6 +1,11 @@
 import { Path, usePathValue } from "@shopify/react-native-skia";
 import { PropsWithChildren } from "react";
-import { SharedValue } from "react-native-reanimated";
+import {
+  SharedValue,
+  useSharedValue,
+  withTiming,
+} from "react-native-reanimated";
+import { useEffectOnce } from "../hooks/useEffectOnce";
 
 export type Point = {
   x: number;
@@ -8,22 +13,41 @@ export type Point = {
   timestamp: number;
 };
 
+const FADE_DURATION = 10000;
+
 type FingerLineProps = PropsWithChildren<{
   line: SharedValue<Point[]>;
+  shouldFade?: boolean;
 }>;
 
-const FingerLine = ({ line, children }: FingerLineProps) => {
+const FingerLine = ({ line, shouldFade = true, children }: FingerLineProps) => {
   const path = usePathValue((path) => {
     "worklet";
-    if (line.value.length > 0) {
-      path.moveTo(line.value[0].x, line.value[0].y);
-      for (let i = 1; i < line.value.length; i++) {
-        path.lineTo(line.value[i].x, line.value[i].y);
-        path.moveTo(line.value[i].x, line.value[i].y);
+    if (line.value.length === 0) return path;
+
+    let isFirstPoint = true;
+    for (let i = 0; i < line.value.length; i++) {
+      const point = line.value[i];
+      if (isFirstPoint) {
+        path.moveTo(point.x, point.y);
+        isFirstPoint = false;
+      } else {
+        path.lineTo(point.x, point.y);
+        path.moveTo(point.x, point.y);
       }
     }
 
     return path;
+  });
+
+  const opacity = useSharedValue(1);
+
+  useEffectOnce(() => {
+    if (!shouldFade) return;
+
+    opacity.value = withTiming(0, {
+      duration: FADE_DURATION,
+    });
   });
 
   return (
@@ -34,6 +58,7 @@ const FingerLine = ({ line, children }: FingerLineProps) => {
       strokeCap="round"
       strokeJoin="round"
       color="black"
+      opacity={opacity}
     >
       {children}
     </Path>

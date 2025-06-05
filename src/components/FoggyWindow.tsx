@@ -22,7 +22,6 @@ import {
   MIN_RAIN_LENGTH,
   MIN_RAIN_SPEED,
   MIN_RAIN_WIDTH,
-  Rain,
   RAIN_COUNT,
   RAIN_SLOPE,
   RainDropProps,
@@ -31,10 +30,14 @@ import { MAX_RAIN_WIDTH } from "./Rain/consts";
 
 // const PADDING_X = 30;
 const PADDING_X = 100;
-const PADDING_Y = 30;
+// const PADDING_Y = 30;
+const PADDING_Y = 100;
 
-// const PIXELS_PER_SECOND = 200;
-const PIXELS_PER_SECOND = 1000;
+const PIXELS_PER_SECOND = 200;
+// const PIXELS_PER_SECOND = 1000;
+
+const BLUR_AMOUNT = 50;
+const BLUR_DURATION = 10000;
 
 export type FoggyWindowRef = {
   foggify: () => void;
@@ -81,8 +84,8 @@ const FoggyWindow = ({
   });
 
   const foggify = () => {
-    fogBlurValue.value = withTiming(20, {
-      duration: 10000,
+    fogBlurValue.value = withTiming(BLUR_AMOUNT, {
+      duration: BLUR_DURATION,
       easing: Easing.inOut(Easing.ease),
     });
   };
@@ -146,7 +149,7 @@ const FoggyWindow = ({
       </Group>
 
       <Group>
-        <FingerLine line={currentFingerLine}>
+        <FingerLine line={currentFingerLine} shouldFade={false}>
           <ImageShader
             image={backgroundImage}
             fit="cover"
@@ -156,7 +159,7 @@ const FoggyWindow = ({
             height={scaledHeight}
           />
         </FingerLine>
-        <FingerLine line={currentFingerLine}>
+        <FingerLine line={currentFingerLine} shouldFade={false}>
           <ImageShader
             image={backgroundImage}
             fit="cover"
@@ -195,7 +198,7 @@ const FoggyWindow = ({
         );
       })}
 
-      <Rain rainDrops={rainDrops} />
+      {/* <Rain rainDrops={rainDrops} /> */}
     </Group>
   );
 };

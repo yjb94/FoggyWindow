@@ -10,13 +10,13 @@ const START_DELAY = 1000;
 const FADE_DURATION = 2000;
 
 const Main = () => {
-  const backgroundImage = useImage(require("./assets/city.jpg"));
+  const backgroundImage = useImage(require("./assets/night.jpg"));
 
   const windowRef = useRef<FoggyWindowRef>(null);
 
   const lineIndex = useSharedValue(0);
-  const [lines, setLines] = useState<SharedValue<Point[]>[]>([]);
-  const currentLine = useSharedValue<Point[]>([]);
+  const [fingerLines, setFingerLines] = useState<SharedValue<Point[]>[]>([]);
+  const currentFingerLine = useSharedValue<Point[]>([]);
 
   useEffect(() => {
     if (!windowRef.current) return;
@@ -29,18 +29,12 @@ const Main = () => {
   }, [windowRef, backgroundImage]);
 
   useEffect(() => {
-    // const interval = setInterval(() => {
-    //   const now = Date.now();
-    //   paths.value = paths.value.filter(
-    //     ({ timestamp }) => now - timestamp < FADE_DURATION
-    //   );
-    // }, 100);
-    // return () => clearInterval(interval);
-  }, []);
+    currentFingerLine.value = [];
+  }, [fingerLines]);
 
   const gesture = Gesture.Pan()
     .onBegin((e) => {
-      currentLine.value = [
+      currentFingerLine.value = [
         {
           x: e.x,
           y: e.y,
@@ -49,8 +43,8 @@ const Main = () => {
       ];
     })
     .onUpdate((e) => {
-      currentLine.value = [
-        ...currentLine.value,
+      currentFingerLine.value = [
+        ...currentFingerLine.value,
         {
           x: e.x,
           y: e.y,
@@ -59,8 +53,9 @@ const Main = () => {
       ];
     })
     .onEnd(() => {
+      "worklet";
       lineIndex.value++;
-      runOnJS(setLines)([...lines, currentLine]);
+      runOnJS(setFingerLines)([...fingerLines, currentFingerLine]);
     });
 
   return (
@@ -68,8 +63,8 @@ const Main = () => {
       <Canvas style={styles.container}>
         <FoggyWindow
           ref={windowRef}
-          fingerLines={lines}
-          currentFingerLine={currentLine}
+          fingerLines={fingerLines}
+          currentFingerLine={currentFingerLine}
           backgroundImage={backgroundImage}
         />
 
