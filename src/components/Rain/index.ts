@@ -1,3 +1,5 @@
 import Rain from "./Rain";
+import { RainDropProps } from "./RainDrop";
 
-export { Rain };
+export * from "./consts";
+export { Rain, type RainDropProps };

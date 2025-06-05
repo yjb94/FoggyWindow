@@ -1,19 +1,22 @@
-import { Canvas, Skia } from "@shopify/react-native-skia";
+import { Canvas, useImage } from "@shopify/react-native-skia";
 import React, { useEffect, useRef, useState } from "react";
 import { StyleSheet } from "react-native";
 import { Gesture, GestureDetector } from "react-native-gesture-handler";
-import { runOnJS } from "react-native-reanimated";
-import { Rain } from "./components/Rain";
-import Window, { WindowRef } from "./components/Window";
+import { runOnJS, SharedValue, useSharedValue } from "react-native-reanimated";
+import { Point } from "./components/FingerLine";
+import FoggyWindow, { FoggyWindowRef } from "./components/FoggyWindow";
 
 const START_DELAY = 1000;
+const FADE_DURATION = 2000;
 
 const Main = () => {
-  const windowRef = useRef<WindowRef>(null);
+  const backgroundImage = useImage(require("./assets/city.jpg"));
 
-  const [isReady, setIsReady] = useState(false);
+  const windowRef = useRef<FoggyWindowRef>(null);
 
-  const [fogPath, setFogPath] = useState(Skia.Path.Make());
+  const lineIndex = useSharedValue(0);
+  const [lines, setLines] = useState<SharedValue<Point[]>[]>([]);
+  const currentLine = useSharedValue<Point[]>([]);
 
   useEffect(() => {
     if (!windowRef.current) return;
@@ -23,32 +26,60 @@ const Main = () => {
     setTimeout(() => {
       windowRef.current.moveCamera();
     }, START_DELAY);
-  }, [isReady]);
+  }, [windowRef, backgroundImage]);
 
-  const clearFogAtPoint = (x: number, y: number) => {
-    const path = Skia.Path.Make();
-    path.addCircle(x, y, 40);
-    setFogPath((prevPath) => {
-      const newPath = Skia.Path.Make();
-      newPath.addPath(prevPath);
-      newPath.addPath(path);
-      return newPath;
+  useEffect(() => {
+    // const interval = setInterval(() => {
+    //   const now = Date.now();
+    //   paths.value = paths.value.filter(
+    //     ({ timestamp }) => now - timestamp < FADE_DURATION
+    //   );
+    // }, 100);
+    // return () => clearInterval(interval);
+  }, []);
+
+  const gesture = Gesture.Pan()
+    .onBegin((e) => {
+      currentLine.value = [
+        {
+          x: e.x,
+          y: e.y,
+          timestamp: Date.now(),
+        },
+      ];
+    })
+    .onUpdate((e) => {
+      currentLine.value = [
+        ...currentLine.value,
+        {
+          x: e.x,
+          y: e.y,
+          timestamp: Date.now(),
+        },
+      ];
+    })
+    .onEnd(() => {
+      lineIndex.value++;
+      runOnJS(setLines)([...lines, currentLine]);
     });
-  };
-
-  const gesture = Gesture.Pan().onUpdate((e) => {
-    runOnJS(clearFogAtPoint)(e.x, e.y);
-  });
-
-  const ready = () => {
-    setIsReady(true);
-  };
 
   return (
     <GestureDetector gesture={gesture}>
       <Canvas style={styles.container}>
-        <Window ref={windowRef} fogPath={fogPath} onReady={ready} />
-        <Rain />
+        <FoggyWindow
+          ref={windowRef}
+          fingerLines={lines}
+          currentFingerLine={currentLine}
+          backgroundImage={backgroundImage}
+        />
+
+        {/* <Rain /> */}
+        {/* <Group>
+          {lines.map((line, index) => {
+            return <Line key={index} line={line} />;
+          })}
+          <Line line={currentLine} />
+        </Group> */}
       </Canvas>
     </GestureDetector>
   );
