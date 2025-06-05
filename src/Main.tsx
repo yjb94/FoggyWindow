@@ -1,86 +1,28 @@
-import {
-  Blur,
-  Canvas,
-  Group,
-  Image,
-  Skia,
-  useCanvasRef,
-  useImage,
-} from "@shopify/react-native-skia";
-import React, { useEffect, useState } from "react";
-import { useWindowDimensions } from "react-native";
+import { Canvas, Skia } from "@shopify/react-native-skia";
+import React, { useEffect, useRef, useState } from "react";
+import { StyleSheet } from "react-native";
 import { Gesture, GestureDetector } from "react-native-gesture-handler";
-import {
-  Easing,
-  runOnJS,
-  useDerivedValue,
-  useSharedValue,
-  withTiming,
-} from "react-native-reanimated";
-
-const PADDING_X = 30;
-const PADDING_Y = 30;
+import { runOnJS } from "react-native-reanimated";
+import Window, { WindowRef } from "./Window";
 
 const START_DELAY = 1000;
 
-const PIXELS_PER_SECOND = 200; // 초당 100픽셀 이동
-
 const Main = () => {
-  const { width, height } = useWindowDimensions();
-  const fogBlurValue = useSharedValue(0);
+  const windowRef = useRef<WindowRef>(null);
+
+  const [isReady, setIsReady] = useState(false);
+
   const [fogPath, setFogPath] = useState(Skia.Path.Make());
-  const canvasRef = useCanvasRef();
-  const backgroundImage = useImage(require("./assets/city.jpg"));
-  const xValue = useSharedValue(0);
-
-  const imageWidth = backgroundImage?.width() || 1;
-  const imageHeight = backgroundImage?.height() || 1;
-
-  const scale = Math.max(
-    width / imageWidth,
-    (height + PADDING_Y * 2) / imageHeight
-  );
-
-  const scaledWidth = imageWidth * scale;
-  const scaledHeight = imageHeight * scale;
-
-  const secondImageX = useDerivedValue(() => {
-    return xValue.value + scaledWidth - PADDING_X;
-  });
-
-  const foggify = () => {
-    fogBlurValue.value = withTiming(10, { duration: 10000 });
-  };
-
-  const moveCamera = () => {
-    xValue.value = -PADDING_X;
-
-    const totalDistance = scaledWidth + PADDING_X;
-    const duration = (totalDistance / PIXELS_PER_SECOND) * 1000;
-
-    const movePosition = -scaledWidth;
-
-    xValue.value = withTiming(
-      movePosition,
-      {
-        duration: duration,
-        easing: Easing.linear,
-      },
-      (finished) => {
-        if (finished) {
-          runOnJS(moveCamera)();
-        }
-      }
-    );
-  };
 
   useEffect(() => {
-    foggify();
+    if (!windowRef.current) return;
+
+    windowRef.current.foggify();
 
     setTimeout(() => {
-      moveCamera();
+      windowRef.current.moveCamera();
     }, START_DELAY);
-  }, [backgroundImage]);
+  }, [isReady]);
 
   const clearFogAtPoint = (x: number, y: number) => {
     const path = Skia.Path.Make();
@@ -99,54 +41,23 @@ const Main = () => {
 
   return (
     <GestureDetector gesture={gesture}>
-      <Canvas style={{ flex: 1 }} ref={canvasRef}>
-        {backgroundImage && (
-          <Group>
-            <Image
-              image={backgroundImage}
-              fit="cover"
-              x={xValue}
-              y={-PADDING_Y}
-              width={scaledWidth}
-              height={scaledHeight}
-            >
-              <Blur blur={fogBlurValue} />
-            </Image>
-
-            <Image
-              image={backgroundImage}
-              fit="cover"
-              x={secondImageX}
-              y={-PADDING_Y}
-              width={scaledWidth}
-              height={scaledHeight}
-            >
-              <Blur blur={fogBlurValue} />
-            </Image>
-
-            <Group clip={fogPath}>
-              <Image
-                image={backgroundImage}
-                fit="cover"
-                x={xValue}
-                y={-PADDING_Y}
-                width={scaledWidth}
-                height={scaledHeight}
-              />
-              <Image
-                image={backgroundImage}
-                fit="cover"
-                x={secondImageX}
-                y={-PADDING_Y}
-                width={scaledWidth}
-                height={scaledHeight}
-              />
-            </Group>
-          </Group>
-        )}
+      <Canvas style={styles.container}>
+        <Window
+          ref={windowRef}
+          fogPath={fogPath}
+          onReady={() => {
+            setIsReady(true);
+          }}
+        />
       </Canvas>
     </GestureDetector>
   );
 };
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
+});
 
 export { Main };
