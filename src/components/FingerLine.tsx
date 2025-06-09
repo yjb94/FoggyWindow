@@ -1,7 +1,11 @@
 import { Path, usePathValue } from "@shopify/react-native-skia";
-import { PropsWithChildren } from "react";
+import { PropsWithChildren, useState } from "react";
 import {
+  Easing,
+  interpolate,
+  runOnJS,
   SharedValue,
+  useDerivedValue,
   useSharedValue,
   withTiming,
 } from "react-native-reanimated";
@@ -13,14 +17,24 @@ export type Point = {
   timestamp: number;
 };
 
-const FADE_DURATION = 10000;
-
 type FingerLineProps = PropsWithChildren<{
   line: SharedValue<Point[]>;
-  shouldFade?: boolean;
+  shouldFadeOut?: boolean;
+  onFadeOut?: () => void;
 }>;
 
-const FingerLine = ({ line, shouldFade = true, children }: FingerLineProps) => {
+const FADE_OUT_DURATION = 5000;
+const FADE_OUT_DELAY = 1000;
+
+const FingerLine = ({
+  line,
+  children,
+  shouldFadeOut = true,
+}: FingerLineProps) => {
+  const [isFadedOut, setIsFadedOut] = useState(false);
+
+  const fadeOut = useSharedValue(1);
+
   const path = usePathValue((path) => {
     "worklet";
     if (line.value.length === 0) return path;
@@ -40,25 +54,38 @@ const FingerLine = ({ line, shouldFade = true, children }: FingerLineProps) => {
     return path;
   });
 
-  const opacity = useSharedValue(1);
-
   useEffectOnce(() => {
-    if (!shouldFade) return;
+    if (!shouldFadeOut) return;
 
-    opacity.value = withTiming(0, {
-      duration: FADE_DURATION,
-    });
+    setTimeout(() => {
+      fadeOut.value = withTiming(
+        0,
+        {
+          duration: FADE_OUT_DURATION,
+          easing: Easing.inOut(Easing.ease),
+        },
+        (finished) => {
+          if (finished) {
+            runOnJS(setIsFadedOut)(true);
+          }
+        }
+      );
+    }, FADE_OUT_DELAY);
   });
+
+  const strokeWidth = useDerivedValue(() => {
+    return interpolate(fadeOut.value, [1, 0], [80, 0]);
+  });
+
+  if (isFadedOut) return null;
 
   return (
     <Path
       path={path}
-      strokeWidth={80}
+      strokeWidth={strokeWidth}
       style="stroke"
       strokeCap="round"
       strokeJoin="round"
-      color="black"
-      opacity={opacity}
     >
       {children}
     </Path>

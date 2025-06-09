@@ -67,14 +67,6 @@ const Main = () => {
           currentFingerLine={currentFingerLine}
           backgroundImage={backgroundImage}
         />
-
-        {/* <Rain /> */}
-        {/* <Group>
-          {lines.map((line, index) => {
-            return <Line key={index} line={line} />;
-          })}
-          <Line line={currentLine} />
-        </Group> */}
       </Canvas>
     </GestureDetector>
   );

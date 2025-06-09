@@ -169,7 +169,7 @@ const FoggyWindow = ({
         </Group>
 
         <Group blendMode="clear">
-          <FingerLine line={currentFingerLine} shouldFade={false} />
+          <FingerLine line={currentFingerLine} shouldFadeOut={false} />
           {fingerLines.map((fingerLine, index) => {
             return <FingerLine key={index} line={fingerLine} />;
           })}
